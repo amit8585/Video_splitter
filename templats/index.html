@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Splitter</title>
+</head>
+<body>
+    <h1>Video Splitter</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file" id="file">
+        <input type="number" name="num_parts" id="num_parts" placeholder="Number of Parts">
+        <button type="submit">Split Video</button>
+    </form>
+    <div id="message"></div>
+
+    <h2>Split Videos</h2>
+    <ul id="videoList"></ul>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#uploadForm').submit(function(event) {
+                event.preventDefault();
+                var formData = new FormData($(this)[0]);
+                $.ajax({
+                    url: '/upload',
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        $('#message').text(response.message);
+                        updateVideoList();
+                    },
+                    error: function(xhr, status, error) {
+                        $('#message').text('Error: ' + error);
+                    }
+                });
+            });
+
+            function updateVideoList() {
+                $('#videoList').empty();
+                $.ajax({
+                    url: '/split_videos',
+                    type: 'GET',
+                    success: function(response) {
+                        response.files.forEach(function(file) {
+                            var listItem = $('<li></li>');
+                            var downloadLink = $('<a href="/split_videos/' + file + '" download>' + file + '</a>');
+                            var deleteButton = $('<button onclick="deleteVideo(\'' + file + '\')">Delete</button>');
+                            listItem.append(downloadLink, deleteButton);
+                            $('#videoList').append(listItem);
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        $('#message').text('Error: ' + error);
+                    }
+                });
+            }
+
+            window.deleteVideo = function(filename) {
+                $.ajax({
+                    url: '/delete/' + filename,
+                    type: 'DELETE',
+                    success: function(response) {
+                        $('#message').text(response.message);
+                        updateVideoList();
+                    },
+                    error: function(xhr, status, error) {
+                        $('#message').text('Error: ' + error);
+                    }
+                });
+            };
+            
+            updateVideoList();
+        });
+    </script>
+</body>
+</html>
